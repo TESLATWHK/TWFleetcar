@@ -69,7 +69,7 @@ create table if not exists public.events (
   showroom_id uuid references public.showrooms (id),
   place text not null default '',
   note text not null default '',
-  actor_id uuid not null references public.profiles (id),
+  actor_id uuid references public.profiles (id),
   happened_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   constraint events_action check (action in ('checkout', 'checkin', 'move')),
@@ -80,6 +80,8 @@ create table if not exists public.events (
   constraint events_place_len check (char_length(place) <= 120),
   constraint events_note_len check (char_length(note) <= 500)
 );
+
+alter table public.events alter column actor_id drop not null;
 
 create table if not exists public.car_shows (
   id uuid primary key default gen_random_uuid(),
@@ -347,10 +349,8 @@ begin
   if auth.uid() is null then
     raise exception 'Sign in first.';
   end if;
-  if new.actor_id is null then
-    new.actor_id := auth.uid();
-  end if;
-  if not exists (select 1 from public.profiles where id = new.actor_id) then
+  if new.actor_id is not null
+    and not exists (select 1 from public.profiles where id = new.actor_id) then
     raise exception 'Choose a teammate.';
   end if;
 
@@ -456,10 +456,8 @@ begin
 
   new.id := old.id;
   new.created_at := old.created_at;
-  if new.actor_id is null then
-    new.actor_id := old.actor_id;
-  end if;
-  if not exists (select 1 from public.profiles where id = new.actor_id) then
+  if new.actor_id is not null
+    and not exists (select 1 from public.profiles where id = new.actor_id) then
     raise exception 'Choose a teammate.';
   end if;
   new.place := trim(coalesce(new.place, ''));

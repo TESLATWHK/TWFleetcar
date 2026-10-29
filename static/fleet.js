@@ -62,7 +62,12 @@ function purposeLabel(key) {
 }
 
 function personName(id) {
+  if (!id) return "Unassigned";
   return profiles.find((person) => person.id === id)?.display_name || "Unknown";
+}
+
+function actorId(select) {
+  return select.value || null;
 }
 
 function showroomName(id) {
@@ -462,9 +467,10 @@ function fillFilters() {
   );
   fillSelect($("filter-room"), roomOptions(), { value: "", label: "Any place" });
   const teammates = profiles.map((person) => ({ value: person.id, label: person.display_name }));
-  fillSelect($("cal-who"), teammates);
-  fillSelect($("action-who"), teammates);
-  fillSelect($("history-actor"), teammates);
+  const unassigned = { value: "", label: "Unassign" };
+  fillSelect($("cal-who"), teammates, unassigned);
+  fillSelect($("action-who"), teammates, unassigned);
+  fillSelect($("history-actor"), teammates, unassigned);
   ["cal-show", "action-show", "history-show"].forEach((id) => {
     fillSelect($(id), showChoices(), { value: "", label: "Not a car show" });
   });
@@ -697,6 +703,7 @@ function prepareShowEvent(show) {
   fillSelect(
     $("show-event-who"),
     profiles.map((person) => ({ value: person.id, label: person.display_name })),
+    { value: "", label: "Unassign" },
   );
   if (typing || showEventFor === show.id) return;
   showEventFor = show.id;
@@ -732,7 +739,7 @@ async function saveShowEvent(event) {
     place: show.name,
     car_show_id: show.id,
     note: $("show-event-note").value.trim(),
-    actor_id: $("show-event-who").value,
+    actor_id: actorId($("show-event-who")),
     happened_at: fromHkClock($("show-event-time").value),
   });
   if (button) button.disabled = false;
@@ -877,7 +884,7 @@ function openHistoryEdit(id) {
   $("history-car").value = row.car_id;
   $("history-action").value = row.action;
   $("history-purpose").value = row.purpose;
-  $("history-actor").value = row.actor_id;
+  $("history-actor").value = row.actor_id || "";
   $("history-room").value = row.showroom_id || "";
   $("history-show").value = row.car_show_id || "";
   $("history-place").value = row.place || "";
@@ -914,7 +921,7 @@ async function saveHistoryEdit(event) {
     place: where.place,
     car_show_id: where.carShowId,
     note: $("history-note").value.trim(),
-    actor_id: $("history-actor").value,
+    actor_id: actorId($("history-actor")),
     happened_at: fromHkClock($("history-time").value),
   }).eq("id", editingEventId);
   if (button) button.disabled = false;
@@ -1513,7 +1520,7 @@ async function saveCalendar(event) {
     place: where.place,
     car_show_id: where.carShowId,
     note: $("cal-note").value.trim(),
-    actor_id: $("cal-who").value,
+    actor_id: actorId($("cal-who")),
     happened_at: fromHkClock($("cal-time").value),
   });
   if (button) button.disabled = false;
@@ -1665,7 +1672,7 @@ async function saveAction(event) {
     place: where.place,
     car_show_id: where.carShowId,
     note: $("action-note").value.trim(),
-    actor_id: $("action-who").value,
+    actor_id: actorId($("action-who")),
     happened_at: fromHkClock($("action-time").value),
   });
   $("action-save").disabled = false;
