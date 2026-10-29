@@ -662,7 +662,7 @@ function renderShows() {
   if ($("show-pick").value) renderShowActivity();
   else {
     prepareShowEvent(null);
-    $("show-detail").replaceChildren(el("p", { class: "empty" }, ["Choose a car show to see which cars went."]));
+    $("show-detail").replaceChildren(el("p", { class: "empty" }, ["Choose a car show to see its demo and display cars."]));
   }
 }
 
@@ -678,8 +678,9 @@ function editShow(id) {
   $("show-start").value = show.starts_on || "";
   $("show-end").value = show.ends_on || "";
   $("show-note").value = show.note || "";
-  $("show-pick").value = id;
+    $("show-pick").value = id;
   renderShows();
+  $("show-activity").scrollIntoView({ block: "start" });
 }
 
 function prepareShowEvent(show) {
@@ -695,7 +696,7 @@ function prepareShowEvent(show) {
     $("show-event-car"),
     cars.filter((car) => car.active).map((car) => ({
       value: car.id,
-      label: [car.nickname, car.exterior].filter(Boolean).join(" · "),
+      label: [car.nickname, car.exterior, kindLabel(car.kind)].filter(Boolean).join(" · "),
     })),
     { value: "", label: "Choose a car" },
   );
@@ -767,6 +768,48 @@ function clearShowForm() {
   $("show-form").reset();
 }
 
+function showRoster(rows) {
+  const listed = [];
+  const seen = new Set();
+  rows.forEach((row) => {
+    if (seen.has(row.car_id)) return;
+    seen.add(row.car_id);
+    listed.push(carById(row.car_id) || { id: row.car_id, missing: true });
+  });
+  const groups = [
+    ["Demo", listed.filter((car) => !car.missing && car.kind !== "display")],
+    ["Display", listed.filter((car) => !car.missing && car.kind === "display")],
+    ["Unknown", listed.filter((car) => car.missing)],
+  ];
+  const wrap = document.createElement("div");
+  groups.forEach(([title, group]) => {
+    if (!group.length) return;
+    wrap.append(el("h3", { class: "log-month" }, [
+      title,
+      el("span", null, [String(group.length)]),
+    ]));
+    const cards = el("div", { class: "cards show-roster" });
+    group.forEach((car) => {
+      if (car.missing) {
+        cards.append(el("article", { class: "card" }, [
+          el("span", { class: "card-copy" }, [el("strong", null, ["Retired car"])]),
+        ]));
+        return;
+      }
+      cards.append(el("article", { class: "card" }, [
+        carGraphic(car.exterior, car.model),
+        el("span", { class: "card-copy" }, [
+          el("span", { class: "kind" }, [kindLabel(car.kind)]),
+          el("strong", null, [car.nickname]),
+          el("p", { class: "meta" }, [[car.model, car.exterior, car.plate].filter(Boolean).join(" · ")]),
+        ]),
+      ]));
+    });
+    wrap.append(cards);
+  });
+  return wrap;
+}
+
 async function renderShowActivity() {
   const id = $("show-pick").value;
   const root = $("show-detail");
@@ -774,7 +817,7 @@ async function renderShowActivity() {
   prepareShowEvent(show);
   root.replaceChildren();
   if (!show) {
-    root.append(el("p", { class: "empty" }, ["Choose a car show to see which cars went."]));
+    root.append(el("p", { class: "empty" }, ["Choose a car show to see its demo and display cars."]));
     return;
   }
   const about = [showWhen(show), show.note].filter(Boolean).join(" · ");
@@ -792,19 +835,21 @@ async function renderShowActivity() {
   }
   showEvents = data || [];
   if (!showEvents.length) {
-    root.append(el("p", { class: "empty" }, ["No records for this show yet."]));
+    root.append(el("p", { class: "empty" }, ["No cars at this show yet."]));
     return;
   }
+  root.append(showRoster(showEvents));
   const byCar = new Map();
   showEvents.forEach((row) => {
     if (!byCar.has(row.car_id)) byCar.set(row.car_id, []);
     byCar.get(row.car_id).push(row);
   });
+  root.append(el("h3", { class: "log-month" }, ["Records"]));
   byCar.forEach((rows, carId) => {
     const car = carById(carId);
     root.append(el("h3", { class: "log-month" }, [
       car ? car.nickname : "Retired car",
-      el("span", null, [String(rows.length)]),
+      el("span", null, [[car ? kindLabel(car.kind) : "", String(rows.length)].filter(Boolean).join(" · ")]),
     ]));
     rows.forEach((row) => {
       const button = el("button", { class: "card", type: "button" }, [

@@ -104,6 +104,7 @@
     #view-shows { display: grid; gap: 16px; }
     .log-head { cursor: default; margin-bottom: 4px; }
     .log-month { margin: 18px 0 8px; font-size: 16px; }
+    .show-roster { display: grid; gap: 8px; }
     .log-month span { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
     .route {
       flex: 0 0 132px;
@@ -215,6 +216,7 @@
         align-items: start;
       }
       #show-list { grid-column: 1 / -1; }
+      .show-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
       .tabs {
