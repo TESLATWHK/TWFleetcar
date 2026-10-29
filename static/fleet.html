@@ -6,7 +6,7 @@
   <title>Fleet</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .fleet-main { max-width: 980px; }
+    .fleet-main { max-width: none; }
     [hidden] { display: none !important; }
     body.signed-in #signed-out { display: none !important; }
     body.signed-in header { padding-bottom: 8px; }
@@ -19,9 +19,11 @@
       position: sticky;
       top: 0;
       z-index: 4;
-      padding: 8px 0;
-      background: var(--bg);
+      padding: 8px 0 10px;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
     }
+    .tabs .btn { min-height: 38px; }
     #room-tabs { display: contents; }
     .tabs button[aria-selected="true"] {
       background: var(--ink);
@@ -184,6 +186,75 @@
       background: var(--ink);
       border-color: var(--ink);
       color: #fff;
+    }
+    dialog { max-height: min(90vh, 760px); overflow: auto; }
+    @media (min-width: 980px) {
+      #view-calendar {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(340px, 420px);
+        column-gap: 18px;
+        align-items: start;
+      }
+      #view-calendar .cal-bar { grid-column: 1; grid-row: 1; }
+      #view-calendar .cal-grid { grid-column: 1; grid-row: 2; }
+      #cal-form {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        position: sticky;
+        top: 64px;
+        max-height: calc(100vh - 84px);
+        overflow: auto;
+      }
+      .cal-day { min-height: 92px; }
+      #room-board .cards,
+      #log-cars .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      #view-shows {
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        align-items: start;
+      }
+      #show-list { grid-column: 1 / -1; }
+    }
+    @media (max-width: 720px) {
+      .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+        scrollbar-width: none;
+      }
+      .tabs .btn { flex: 0 0 auto; }
+      .cal-bar { flex-wrap: wrap; }
+      .cal-bar h2 { order: -1; flex-basis: 100%; font-size: 20px; }
+      .cal-day { min-height: 48px; padding: 4px 2px; border-radius: 8px; }
+      .cal-chip {
+        width: 8px;
+        height: 8px;
+        margin-top: 3px;
+        padding: 0;
+        font-size: 0;
+        border-radius: 99px;
+        background: transparent;
+        overflow: hidden;
+      }
+      .cal-day.selected .cal-chip { background: transparent; }
+      .card { align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+      .car-swatch { flex-basis: 108px; height: 44px; }
+      .route-pair { width: 100%; margin-left: 0; justify-content: flex-end; }
+      .route {
+        flex-basis: 100%;
+        flex-direction: row;
+        min-height: 0;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+      .route .car-swatch { width: 84px; height: 34px; margin: 0; }
+      .route .route-arrow { width: 20px; height: 20px; transform: rotate(-90deg); }
+      .btn { min-height: 40px; }
+      dialog { width: calc(100% - 16px); }
     }
   </style>
 </head>

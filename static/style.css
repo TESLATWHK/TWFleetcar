@@ -30,7 +30,9 @@ header {
   justify-content: space-between;
   gap: 24px;
   align-items: flex-end;
-  padding: 28px 32px 18px;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0 18px;
 }
 .eyebrow {
   margin: 0 0 4px;
@@ -55,7 +57,11 @@ h2 { margin: 0 0 12px; font: 600 18px/1.2 "Segoe UI Variable Display", "Segoe UI
 }
 .pill strong { color: var(--ink); font-weight: 650; }
 .nav.current { color: var(--ink); }
-main { padding: 0 32px 40px; }
+main {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 0 0 48px;
+}
 .layout {
   display: grid;
   grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
@@ -109,7 +115,8 @@ input:focus, select:focus, textarea:focus {
 .client-lines { margin: 0; padding-left: 18px; }
 .client-lines li { margin: 4px 0; }
 .banner {
-  margin: 0 32px 16px;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto 16px;
   padding: 10px 14px;
   border-radius: 12px;
   background: var(--warn-bg);
@@ -120,8 +127,9 @@ input:focus, select:focus, textarea:focus {
 .empty { padding: 18px 8px; color: var(--muted); text-align: center; }
 .hint { margin: 0; color: var(--muted); font-size: 13px; }
 @media (max-width: 900px) {
-  header, main { padding-left: 16px; padding-right: 16px; }
-  .banner { margin-left: 16px; margin-right: 16px; }
+  header, main, .banner { width: min(1180px, calc(100% - 32px)); }
   header, .layout { display: grid; }
   .header-actions { justify-content: flex-start; }
+  h1 { font-size: 28px; }
+  input, select, textarea { font-size: 16px; }
 }
