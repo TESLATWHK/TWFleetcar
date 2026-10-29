@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fleet</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .fleet-main { max-width: 980px; }
+    [hidden] { display: none !important; }
+    body.signed-in #signed-out { display: none !important; }
+    body.signed-in header { padding-bottom: 8px; }
+    body.signed-in .sub { display: none; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      padding: 8px 0;
+      background: var(--bg);
+    }
+    #room-tabs { display: contents; }
+    .tabs button[aria-selected="true"] {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .groups { display: grid; gap: 18px; }
+    .group-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .group-head h2 { margin: 0; }
+    .count { color: var(--muted); font-size: 13px; }
+    .card {
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+    .card-copy { min-width: 0; flex: 1; }
+    .car-swatch {
+      flex: 0 0 128px;
+      height: 52px;
+      display: block;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .car-swatch img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .color-live { display: flex; align-items: center; gap: 10px; }
+    .color-live .car-swatch { flex-basis: 156px; height: 64px; }
+    .cal-chip { display: flex; align-items: center; gap: 4px; }
+    .paint-dot {
+      flex: 0 0 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      border: 1px solid rgba(28, 27, 23, 0.25);
+    }
+    .card:hover { border-color: #c9c2b2; }
+    .card.out { background: var(--warn-bg); border-color: #ead7a2; }
+    .cal-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .cal-bar h2 { margin: 0; flex: 1; text-align: center; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-bottom: 14px; }
+    .cal-dow { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
+    .cal-day {
+      min-height: 76px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 4px;
+      text-align: left;
+    }
+    .cal-day.outside { opacity: 0.45; }
+    .cal-day.today { border-color: var(--ink); }
+    .cal-day.selected { background: var(--ink); color: #fff; }
+    .cal-num { display: block; font-size: 12px; font-weight: 650; }
+    .cal-chip {
+      display: flex;
+      margin-top: 2px;
+      padding: 1px 3px;
+      border-radius: 4px;
+      background: #efe6d4;
+      color: var(--ink);
+      font-size: 10px;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-day.selected .cal-chip { background: rgba(255, 255, 255, 0.16); color: #fff; }
+    .card.retired { opacity: 0.7; }
+    #view-shows { display: grid; gap: 16px; }
+    .log-head { cursor: default; margin-bottom: 4px; }
+    .log-month { margin: 18px 0 8px; font-size: 16px; }
+    .log-month span { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 6px; }
+    .route {
+      flex: 0 0 132px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-height: 96px;
+      padding: 8px 8px 10px;
+      border-radius: 14px;
+      background: #fff;
+      text-align: center;
+    }
+    .route .car-swatch { flex: 0 0 auto; width: 116px; height: 48px; margin-bottom: 4px; }
+    .route-place {
+      max-width: 100%;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .route-arrow { width: 28px; height: 28px; color: var(--ink); }
+    .route-pair {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .route-badge {
+      min-width: 46px;
+      max-width: 76px;
+      height: 46px;
+      padding: 0 6px;
+      border-radius: 12px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+    .route-pair .route-arrow { width: 18px; height: 18px; transform: rotate(-90deg); }
+    .car-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: stretch; }
+    .car-row > .btn { align-self: center; }
+    .card-top, .split {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+    .kind {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .filters, .two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    textarea.short { min-height: 72px; }
+    dialog {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      background: var(--panel);
+      color: var(--ink);
+      width: min(480px, calc(100% - 24px));
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop { background: rgba(28, 27, 23, 0.4); }
+    .error { color: var(--accent); margin: 0; }
+    .sign-in { max-width: 420px; }
+    #action-picks .btn[aria-pressed="true"] {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Tesla HK</p>
+      <h1>Fleet</h1>
+      <p class="sub">Where each demo and display car is, who has it, and why it moved.</p>
+    </div>
+    <div class="header-actions">
+      <span class="pill" id="who-pill" hidden>You <strong id="who-name"></strong></span>
+      <button class="btn" id="refresh" type="button" hidden>Refresh</button>
+      <button class="btn" id="sign-out" type="button" hidden>Sign out</button>
+    </div>
+  </header>
+  <p class="banner" id="banner" hidden></p>
+  <main class="fleet-main">
+    <section class="panel stack sign-in" id="signed-out" hidden>
+      <h2>Sign in</h2>
+      <p class="hint">Use the email a teammate invited. There is no public sign-up.</p>
+      <form id="sign-in" class="stack">
+        <label>Email
+          <input id="email" type="email" autocomplete="username" required />
+        </label>
+        <label>Password
+          <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <div class="row">
+          <button class="btn primary" type="submit">Sign in</button>
+        </div>
+      </form>
+    </section>
+
+    <div id="app" hidden>
+      <div class="tabs" role="tablist">
+        <button class="btn" id="tab-calendar" type="button" role="tab" aria-selected="true">Calendar</button>
+        <span id="room-tabs"></span>
+        <button class="btn" id="tab-history" type="button" role="tab" aria-selected="false">History</button>
+        <button class="btn" id="tab-log" type="button" role="tab" aria-selected="false">Log</button>
+        <button class="btn" id="tab-shows" type="button" role="tab" aria-selected="false">Shows</button>
+        <button class="btn" id="tab-cars" type="button" role="tab" aria-selected="false">Cars</button>
+      </div>
+
+      <section id="view-calendar" role="tabpanel">
+        <div class="cal-bar">
+          <button class="btn" id="cal-prev" type="button">Prev</button>
+          <h2 id="cal-label"></h2>
+          <button class="btn" id="cal-next" type="button">Next</button>
+          <button class="btn ghost" id="cal-this" type="button">Today</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <form class="panel stack" id="cal-form">
+          <h2 id="cal-day-title"></h2>
+          <div class="cards" id="cal-day-list"></div>
+          <p class="hint">Record a move, check-out, or check-in on this day. Body color is kept on the car, so every record shows which car it was. A future time stays planned until then.</p>
+          <div class="two">
+            <label>Car
+              <select id="cal-car" required></select>
+            </label>
+            <label>What
+              <select id="cal-action">
+                <option value="move">Move</option>
+                <option value="checkout">Check out</option>
+                <option value="checkin">Check in</option>
+              </select>
+            </label>
+          </div>
+          <div class="two">
+            <label>Purpose
+              <select id="cal-purpose" required></select>
+            </label>
+            <label>Responsible
+              <select id="cal-who" required></select>
+            </label>
+          </div>
+          <label>Showroom
+            <select id="cal-room"></select>
+          </label>
+          <label id="cal-show-label">Car show
+            <select id="cal-show"></select>
+          </label>
+          <label id="cal-place-label">Place
+            <input id="cal-place" maxlength="120" placeholder="Car show name" />
+          </label>
+          <div class="two">
+            <label>Time (Hong Kong)
+              <input id="cal-time" type="datetime-local" required />
+            </label>
+            <label>Note
+              <input id="cal-note" maxlength="500" placeholder="Optional" />
+            </label>
+          </div>
+          <p class="error" id="cal-error" hidden></p>
+          <div class="row">
+            <button class="btn primary" type="submit">Save on this day</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="view-room" role="tabpanel" hidden>
+        <div id="room-board"></div>
+      </section>
+
+      <section id="view-history" role="tabpanel" hidden>
+        <form class="panel stack" id="history-form">
+          <div class="filters">
+            <label>Car
+              <select id="filter-car"><option value="">Any car</option></select>
+            </label>
+            <label>Who
+              <select id="filter-who"><option value="">Anyone</option></select>
+            </label>
+            <label>Purpose
+              <select id="filter-purpose"><option value="">Any purpose</option></select>
+            </label>
+            <label>Showroom
+              <select id="filter-room"><option value="">Any place</option></select>
+            </label>
+            <label>Place contains
+              <input id="filter-place" placeholder="Kowloon" />
+            </label>
+            <label>From
+              <input id="filter-from" type="date" />
+            </label>
+            <label>To
+              <input id="filter-to" type="date" />
+            </label>
+          </div>
+          <div class="row">
+            <button class="btn primary" type="submit">Search</button>
+          </div>
+        </form>
+        <p class="hint">Tap a record to correct who is responsible, or to delete it.</p>
+        <div class="cards" id="history"></div>
+      </section>
+
+      <section id="view-log" role="tabpanel" hidden>
+        <div class="groups" id="log-cars"></div>
+        <div id="log-detail" hidden>
+          <div class="cal-bar">
+            <button class="btn" id="log-back" type="button">All cars</button>
+            <h2 id="log-title">Log</h2>
+          </div>
+          <article class="card log-head" id="log-head"></article>
+          <div id="log-months"></div>
+        </div>
+      </section>
+
+      <section id="view-shows" role="tabpanel" hidden>
+        <section class="panel stack" id="show-activity">
+          <h2>Activity</h2>
+          <label>Car show
+            <select id="show-pick"></select>
+          </label>
+          <form class="stack" id="show-event-form" hidden>
+            <h3>Add a record</h3>
+            <div class="two">
+              <label>Car
+                <select id="show-event-car" required></select>
+              </label>
+              <label>What
+                <select id="show-event-action">
+                  <option value="move">Move</option>
+                  <option value="checkout">Check out</option>
+                </select>
+              </label>
+            </div>
+            <div class="two">
+              <label>Purpose
+                <select id="show-event-purpose" required></select>
+              </label>
+              <label>Responsible
+                <select id="show-event-who" required></select>
+              </label>
+            </div>
+            <div class="two">
+              <label>Time (Hong Kong)
+                <input id="show-event-time" type="datetime-local" required />
+              </label>
+              <label>Note
+                <input id="show-event-note" maxlength="500" placeholder="Optional" />
+              </label>
+            </div>
+            <p class="error" id="show-event-error" hidden></p>
+            <div class="row">
+              <button class="btn primary" type="submit">Add record</button>
+            </div>
+          </form>
+          <div id="show-detail"></div>
+        </section>
+        <form class="panel stack" id="show-form">
+          <h2 id="show-form-title">New car show</h2>
+          <label>Name
+            <input id="show-name" maxlength="80" required placeholder="Hong Kong Car Show" />
+          </label>
+          <label>Venue
+            <input id="show-venue" maxlength="120" placeholder="AsiaWorld-Expo" />
+          </label>
+          <div class="two">
+            <label>From
+              <input id="show-start" type="date" />
+            </label>
+            <label>To
+              <input id="show-end" type="date" />
+            </label>
+          </div>
+          <label>Note
+            <textarea class="short" id="show-note" maxlength="500" placeholder="Optional"></textarea>
+          </label>
+          <div class="row">
+            <button class="btn primary" id="show-save" type="submit">Add car show</button>
+            <button class="btn warn" id="show-delete" type="button" hidden>Delete</button>
+            <button class="btn ghost" id="show-clear" type="button">Clear</button>
+          </div>
+        </form>
+        <div class="cards" id="show-list"></div>
+      </section>
+
+      <section id="view-cars" role="tabpanel" hidden>
+        <div class="layout">
+          <form class="panel stack" id="car-form">
+            <h2 id="car-form-title">New car</h2>
+            <label>Name
+              <input id="car-name" maxlength="80" required placeholder="White Model Y" />
+            </label>
+            <div class="two">
+              <label>Model
+                <input id="car-model" maxlength="80" placeholder="Model Y L" />
+              </label>
+              <label>Body color
+                <input id="car-exterior" maxlength="40" placeholder="Glacier" />
+              </label>
+            </div>
+            <div class="color-live" id="color-live"></div>
+            <div class="two">
+              <label>Interior
+                <input id="car-interior" maxlength="40" placeholder="BLK" />
+              </label>
+              <label>Plate
+                <input id="car-plate" maxlength="20" placeholder="VF1641 or T-plate" />
+              </label>
+            </div>
+            <label>VIN
+              <input id="car-vin" maxlength="17" placeholder="LRWYHCEK7TC545023" />
+            </label>
+            <div class="two">
+              <label>Type
+                <select id="car-kind">
+                  <option value="demo">Demo</option>
+                  <option value="display">Display</option>
+                </select>
+              </label>
+              <label>Home showroom
+                <select id="car-home" required></select>
+              </label>
+            </div>
+            <label>Note
+              <textarea class="short" id="car-notes" maxlength="500" placeholder="Optional"></textarea>
+            </label>
+            <label class="hint">
+              <span><input id="car-active" type="checkbox" checked /> On the floor</span>
+            </label>
+            <div class="row">
+              <button class="btn primary" id="car-save" type="submit">Add car</button>
+              <button class="btn warn" id="car-delete" type="button" hidden>Delete</button>
+              <button class="btn ghost" id="car-new" type="button">Clear</button>
+            </div>
+          </form>
+          <div class="stack">
+            <form class="panel stack" id="room-form">
+              <h2>Showrooms</h2>
+              <div class="two" id="showroom-fields"></div>
+              <div class="row">
+                <button class="btn" type="submit">Save names</button>
+              </div>
+            </form>
+            <form class="panel stack" id="name-form">
+              <h2>Your name</h2>
+              <p class="hint">This is the name written on every car you check out.</p>
+              <label>Name on the log
+                <input id="my-name" maxlength="80" required />
+              </label>
+              <div class="row">
+                <button class="btn" type="submit">Save name</button>
+              </div>
+            </form>
+            <div class="cards" id="car-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="history-dialog">
+    <form id="history-edit" class="stack">
+      <h2 id="history-edit-title" style="margin:0">Edit record</h2>
+      <div class="two">
+        <label>Car
+          <select id="history-car" required></select>
+        </label>
+        <label>What
+          <select id="history-action">
+            <option value="move">Move</option>
+            <option value="checkout">Check out</option>
+            <option value="checkin">Check in</option>
+          </select>
+        </label>
+      </div>
+      <div class="two">
+        <label>Purpose
+          <select id="history-purpose" required></select>
+        </label>
+        <label>Responsible
+          <select id="history-actor" required></select>
+        </label>
+      </div>
+      <label>Showroom
+        <select id="history-room"></select>
+      </label>
+      <label id="history-show-label">Car show
+        <select id="history-show"></select>
+      </label>
+      <label id="history-place-label">Place
+        <input id="history-place" maxlength="120" placeholder="Car show name" />
+      </label>
+      <label>Time (Hong Kong)
+        <input id="history-time" type="datetime-local" required />
+      </label>
+      <label>Note
+        <textarea class="short" id="history-note" maxlength="500" placeholder="Optional"></textarea>
+      </label>
+      <p class="error" id="history-error" hidden></p>
+      <div class="row">
+        <button class="btn primary" type="submit">Save changes</button>
+        <button class="btn warn" id="history-delete" type="button">Delete</button>
+        <button class="btn ghost" id="history-cancel" type="button">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="action-dialog">
+    <form id="action-form" class="stack">
+      <div class="card-top">
+        <h2 id="action-title" style="margin:0"></h2>
+        <p class="kind" id="action-kind"></p>
+      </div>
+      <p class="hint" id="action-meta"></p>
+      <div class="row" id="action-picks">
+        <button class="btn" type="button" data-action="checkout">Check out</button>
+        <button class="btn" type="button" data-action="checkin">Check in</button>
+        <button class="btn" type="button" data-action="move">Move</button>
+      </div>
+      <label>Purpose
+        <select id="action-purpose" required></select>
+      </label>
+      <label>Responsible
+        <select id="action-who" required></select>
+      </label>
+      <label id="action-room-label">Showroom
+        <select id="action-room"></select>
+      </label>
+      <label id="action-show-label">Car show
+        <select id="action-show"></select>
+      </label>
+      <label id="action-place-label">Place
+        <input id="action-place" maxlength="120" placeholder="Kowloon test drive, or a car show" />
+      </label>
+      <label>Time (Hong Kong)
+        <input id="action-time" type="datetime-local" required />
+      </label>
+      <label>Note
+        <textarea class="short" id="action-note" maxlength="500" placeholder="Optional"></textarea>
+      </label>
+      <p class="error" id="action-error" hidden></p>
+      <div class="row">
+        <button class="btn primary" id="action-save" type="submit">Save</button>
+        <button class="btn warn" id="action-undo" type="button" hidden>Undo last</button>
+        <button class="btn ghost" id="action-cancel" type="button">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="fleet-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="fleet.js"></script>
+</body>
+</html>
